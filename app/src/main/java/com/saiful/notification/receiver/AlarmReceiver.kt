@@ -23,7 +23,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
         // Create notification
         val notificationManager =
-            ContextCompat.getSystemService(context!!, NotificationManager::class.java)
+            ContextCompat.getSystemService(context, NotificationManager::class.java)
         val notification = NotificationCompat.Builder(context, "alarm_channel_id")
             .setSmallIcon(R.drawable.notification_flat)
             .setContentTitle("Alarm")

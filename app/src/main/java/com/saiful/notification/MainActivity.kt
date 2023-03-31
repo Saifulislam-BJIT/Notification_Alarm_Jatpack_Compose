@@ -90,11 +90,20 @@ class MainActivity : ComponentActivity() {
         // alarm
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(this, AlarmReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val pendingIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
 
         val triggerTimeMillis = System.currentTimeMillis() + 2000 // 1 minute from now
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTimeMillis, pendingIntent)
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerTimeMillis,
+                pendingIntent
+            )
         } else {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTimeMillis, pendingIntent)
         }
