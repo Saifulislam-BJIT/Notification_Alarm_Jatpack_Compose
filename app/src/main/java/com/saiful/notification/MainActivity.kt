@@ -1,13 +1,19 @@
 package com.saiful.notification
 
+import android.Manifest
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -27,9 +34,11 @@ import androidx.work.WorkManager
 import com.saiful.notification.receiver.AlarmReceiver
 import com.saiful.notification.ui.theme.NotificationTheme
 import com.saiful.notification.workers.Notification
+import java.util.*
 
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -39,7 +48,45 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        val requestLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+                if (it) {
+                    //main activity
+                    startActivity(
+                        Intent(
+                            this@MainActivity,
+                            MainActivity::class.java
+                        )
+                    )
+                } else {
+                    //show error message
+                    showErrorMessage()
+                }
+            }
+//        requestLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        when (PackageManager.PERMISSION_GRANTED) {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) -> {
+                // You can use the API that requires the permission.
+            }
+            else -> {
+                // You can directly ask for the permission.
+                // The registered ActivityResultCallback gets the result of this request.
+                requestLauncher.launch(
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+            }
+        }
+    }
 
+    private fun showErrorMessage() {
+        Toast.makeText(
+            this,
+            "Permission is not granted",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     @Composable
@@ -88,25 +135,23 @@ class MainActivity : ComponentActivity() {
 
 
         // alarm
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(this, AlarmReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            this,
-            0,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val triggerTimeMillis = System.currentTimeMillis() + 2000 // 1 minute from now
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerTimeMillis,
-                pendingIntent
-            )
-        } else {
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTimeMillis, pendingIntent)
+         val alarmMgr: AlarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val alarmIntent: PendingIntent = Intent(context, AlarmReceiver::class.java).let { intent ->
+          PendingIntent.getBroadcast(context, 0, intent,  0)
+      }
+        val calendar: Calendar = Calendar.getInstance().apply {
+            timeInMillis = System.currentTimeMillis()
+            set(Calendar.HOUR_OF_DAY, 8)
+            set(Calendar.MINUTE, 30)
         }
+
+        // here was a dot
+        alarmMgr.set(
+            AlarmManager.RTC_WAKEUP,
+            SystemClock.elapsedRealtime() + 2000,
+            alarmIntent
+        )
+//        alarmMgr?.cancel(alarmIntent)
     }
 
     @Preview(showBackground = true)
